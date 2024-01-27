@@ -1,7 +1,8 @@
-image: docker:latest
+image: docker:20.10  # To run all jobs in this pipeline, use a latest docker image
 
 services:
-  - docker:dind
+  - docker:dind       # To run all jobs in this pipeline, use a docker image which contains a docker daemon running inside (dind - docker in docker). Reference: https://forum.gitlab.com/t/why-services-docker-dind-is-needed-while-already-having-image-docker/43534
+
 stages:
   - build
   - test
@@ -10,15 +11,14 @@ stages:
   - integration
   - prod
 
-build:
+sast:
   stage: build
   script:
-    - echo "This is a build step"
-
-test:
-  stage: test
-  script:
-    - echo "This is a test step"
+    - docker run --rm -v $(pwd):/src -w /src securego/gosec -fmt json -out gosec-output.json ./...
+  artifacts:
+    paths: [gosec-output.json]
+    when: always
+  allow_failure: true
 
 integration:
   stage: integration
@@ -30,5 +30,5 @@ integration:
 prod:
   stage: prod
   script:
-    - echo "This is a deploy step"
+    - echo "This is a deploy step."
   when: manual # Continuous Delivery
